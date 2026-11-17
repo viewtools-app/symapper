@@ -1,0 +1,10 @@
+(function_definition name: (identifier) @name.definition.function)
+(class_definition name: (identifier) @name.definition.class)
+(module (expression_statement (assignment left: (identifier) @name.definition.constant)))
+
+(call function: (identifier) @name.reference.call)
+(call function: (attribute attribute: (identifier) @name.reference.call))
+(class_definition superclasses: (argument_list (identifier) @name.reference.type))
+(class_definition superclasses: (argument_list (attribute attribute: (identifier) @name.reference.type)))
+(decorator (identifier) @name.reference.decorator)
+(decorator (attribute attribute: (identifier) @name.reference.decorator))

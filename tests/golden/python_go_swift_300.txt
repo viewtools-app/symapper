@@ -1,0 +1,8 @@
+README.md
+View.swift:
+struct View {
+    func greet() {}
+lib.py:
+def greet():
+main.go:
+func main() { greet() }

@@ -1,0 +1,87 @@
+README.md
+other.py:
+def other():
+plain.rs:
+fn plain() {}
+private.ts:
+function _private() {}
+shared0.go:
+func shared() {}
+shared1.go:
+func shared() {}
+shared2.go:
+func shared() {}
+shared3.go:
+func shared() {}
+shared4.go:
+func shared() {}
+shared5.go:
+func shared() {}
+calls.rs:
+fn caller() { plain(); other(); _private(); shared(); }
+fn item000() { plain(); other(); _private(); shared(); }
+fn item001() { plain(); other(); _private(); shared(); }
+fn item002() { plain(); other(); _private(); shared(); }
+fn item003() { plain(); other(); _private(); shared(); }
+fn item004() { plain(); other(); _private(); shared(); }
+fn item005() { plain(); other(); _private(); shared(); }
+fn item006() { plain(); other(); _private(); shared(); }
+fn item007() { plain(); other(); _private(); shared(); }
+fn item008() { plain(); other(); _private(); shared(); }
+fn item009() { plain(); other(); _private(); shared(); }
+fn item010() { plain(); other(); _private(); shared(); }
+fn item011() { plain(); other(); _private(); shared(); }
+fn item012() { plain(); other(); _private(); shared(); }
+fn item013() { plain(); other(); _private(); shared(); }
+fn item014() { plain(); other(); _private(); shared(); }
+fn item015() { plain(); other(); _private(); shared(); }
+fn item016() { plain(); other(); _private(); shared(); }
+fn item017() { plain(); other(); _private(); shared(); }
+fn item018() { plain(); other(); _private(); shared(); }
+fn item019() { plain(); other(); _private(); shared(); }
+fn item020() { plain(); other(); _private(); shared(); }
+fn item021() { plain(); other(); _private(); shared(); }
+fn item022() { plain(); other(); _private(); shared(); }
+fn item023() { plain(); other(); _private(); shared(); }
+fn item024() { plain(); other(); _private(); shared(); }
+fn item025() { plain(); other(); _private(); shared(); }
+fn item026() { plain(); other(); _private(); shared(); }
+fn item027() { plain(); other(); _private(); shared(); }
+fn item028() { plain(); other(); _private(); shared(); }
+fn item029() { plain(); other(); _private(); shared(); }
+fn item030() { plain(); other(); _private(); shared(); }
+fn item031() { plain(); other(); _private(); shared(); }
+fn item032() { plain(); other(); _private(); shared(); }
+fn item033() { plain(); other(); _private(); shared(); }
+fn item034() { plain(); other(); _private(); shared(); }
+fn item035() { plain(); other(); _private(); shared(); }
+fn item036() { plain(); other(); _private(); shared(); }
+fn item037() { plain(); other(); _private(); shared(); }
+fn item038() { plain(); other(); _private(); shared(); }
+fn item039() { plain(); other(); _private(); shared(); }
+fn item040() { plain(); other(); _private(); shared(); }
+fn item041() { plain(); other(); _private(); shared(); }
+fn item042() { plain(); other(); _private(); shared(); }
+fn item043() { plain(); other(); _private(); shared(); }
+fn item044() { plain(); other(); _private(); shared(); }
+fn item045() { plain(); other(); _private(); shared(); }
+fn item046() { plain(); other(); _private(); shared(); }
+fn item047() { plain(); other(); _private(); shared(); }
+fn item048() { plain(); other(); _private(); shared(); }
+fn item049() { plain(); other(); _private(); shared(); }
+fn item050() { plain(); other(); _private(); shared(); }
+fn item051() { plain(); other(); _private(); shared(); }
+fn item052() { plain(); other(); _private(); shared(); }
+fn item053() { plain(); other(); _private(); shared(); }
+fn item054() { plain(); other(); _private(); shared(); }
+fn item055() { plain(); other(); _private(); shared(); }
+fn item056() { plain(); other(); _private(); shared(); }
+fn item057() { plain(); other(); _private(); shared(); }
+fn item058() { plain(); other(); _private(); shared(); }
+fn item059() { plain(); other(); _private(); shared(); }
+fn item060() { plain(); other(); _private(); shared(); }
+fn item061() { plain(); other(); _private(); shared(); }
+fn item062() { plain(); other(); _private(); shared(); }
+fn item063() { plain(); other(); _private(); shared(); }
+fn item064() { plain(); other(); _private(); shared(); }
+fn item065() { plain(); other(); _private(); shared(); }

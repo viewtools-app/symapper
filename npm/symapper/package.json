@@ -1,0 +1,37 @@
+{
+  "name": "symapper",
+  "version": "0.0.0-dev",
+  "description": "Ranked, token-budgeted map of a git repo's code for coding agents",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/viewtools-app/symapper.git"
+  },
+  "homepage": "https://symapper.viewtools.app/",
+  "keywords": [
+    "code-map",
+    "tree-sitter",
+    "pagerank",
+    "llm",
+    "agents"
+  ],
+  "bin": {
+    "symapper": "bin/symapper.js"
+  },
+  "files": [
+    "bin/symapper.js",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "THIRD-PARTY-LICENSES"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "optionalDependencies": {
+    "@symapper-cli/darwin-arm64": "0.0.0-dev",
+    "@symapper-cli/darwin-x64": "0.0.0-dev",
+    "@symapper-cli/linux-x64": "0.0.0-dev",
+    "@symapper-cli/linux-arm64": "0.0.0-dev"
+  }
+}

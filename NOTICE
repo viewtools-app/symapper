@@ -1,0 +1,32 @@
+symapper
+Copyright (c) 2026 ViewTools App
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+The ranking method follows Aider's repository map:
+https://aider.chat/2023/10/22/repomap.html
+Aider is licensed under Apache-2.0. No Aider source code or query text is
+included in symapper. The tree-sitter queries in queries/ are original.
+
+The ranking uses PageRank (Page, Brin, Motwani, Winograd, "The PageRank
+Citation Ranking: Bringing Order to the Web", Stanford InfoLab, 1999) with a
+personalization vector as in Haveliwala, "Topic-Sensitive PageRank", WWW 2002.
+
+Parsing uses tree-sitter and the following grammar crates, linked as
+dependencies. Each is distributed under its own MIT license:
+- tree-sitter: https://github.com/tree-sitter/tree-sitter
+- tree-sitter-typescript (TypeScript and TSX):
+  https://github.com/tree-sitter/tree-sitter-typescript
+- tree-sitter-javascript (JavaScript and JSX):
+  https://github.com/tree-sitter/tree-sitter-javascript
+- tree-sitter-python: https://github.com/tree-sitter/tree-sitter-python
+- tree-sitter-go: https://github.com/tree-sitter/tree-sitter-go
+- tree-sitter-rust: https://github.com/tree-sitter/tree-sitter-rust
+- tree-sitter-swift: https://github.com/alex-pinkus/tree-sitter-swift
+
+The full list of linked third-party crates, with their license texts, is in
+THIRD-PARTY-LICENSES.
+
+Website fonts
+Space Grotesk and Commit Mono are distributed under SIL OFL 1.1.
+Font files are in site/fonts/; licenses are OFL-space-grotesk.txt and
+OFL-commit-mono.txt in that directory.

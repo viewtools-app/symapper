@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A local CLI that ranks relevant code within a token budget. No LLM, no daemon; mapping makes no network requests.">
+  <title>symapper | A focused code map</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+<div class="header-inner"><a class="brand-label" href="index.html">symapper</a>
+<nav aria-label="Main navigation"><a href="#install">Install</a><a href="docs.html">Docs</a><a href="https://github.com/viewtools-app/symapper">GitHub ↗</a></nav></div>
+</header>
+<main id="main">
+<section class="hero" aria-labelledby="title">
+<div class="hero-copy">
+<p class="eyebrow">Open source · Rust CLI</p>
+<h1 id="title">Find the code<br>that <span class="accent">matters.</span></h1>
+<p class="lead">A ranked code map for your task, within a token budget.</p>
+<div id="install">
+<h2 class="sr-only">Install symapper</h2>
+<div class="install"><pre tabindex="0"><code id="hero-command">npx symapper .</code></pre><button type="button" class="copy" data-copy="hero-command" hidden>Copy</button></div>
+<p class="install-note">macOS and Linux. Needs git and Node 18+. <a href="docs.html#install">Other installs.</a></p>
+</div>
+<p id="copy-status" class="copy-status" role="status" aria-live="polite"></p>
+</div>
+</section>
+<section class="demo" aria-labelledby="demo-title">
+<h2 id="demo-title">See it work</h2>
+<figure class="terminal video">
+<figcaption class="terminal-bar" id="demo-caption"><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span>Task in, ranked map out, then grep to verify</figcaption>
+<video id="demo" controls loop muted playsinline preload="none" poster="media/poster.png" aria-label="Terminal recording: symapper maps this repository for the task of making the cache directory configurable. The ranked map lists the cache files first with their signatures, then grep confirms where the cache directory is read.">
+<source src="media/demo.webm" type="video/webm">
+<source src="media/demo.mp4" type="video/mp4">
+<p>Your browser cannot play the recording. The command: <code>symapper . --focus cache --tokens 100</code> prints a ranked map with the cache files first; <code>grep -n SYMAPPER_CACHE_DIR src/cli.rs</code> then confirms where the setting is read.</p>
+</video>
+</figure>
+<p class="caption">Ranked map: each <code>path:</code> block lists signatures, best match first.</p>
+</section>
+<section class="how" aria-labelledby="how">
+<h2 id="how">How it works</h2>
+<ol class="flow" aria-label="What symapper does, step by step">
+<li><span class="step-title">Read tracked files</span></li>
+<li><span class="step-title">Find definitions and uses</span></li>
+<li><span class="step-title">Build a file graph</span></li>
+<li class="pull"><span class="step-title">Rank toward your focus</span></li>
+<li><span class="step-title">Trim to the token budget</span></li>
+<li><span class="step-title">Print the map</span></li>
+</ol>
+<p class="more"><a href="docs.html#ranking">Ranking details →</a></p>
+</section>
+<section class="split" aria-labelledby="agents">
+<h2 id="agents">Use it with coding agents</h2>
+<ol class="steps">
+<li>Pick focus words from the task.</li>
+<li>Run the map once at the start.</li>
+<li>Read the top files.</li>
+<li>Still search with <code>rg</code>; the map can miss files.</li>
+</ol>
+<pre tabindex="0"><code>Before exploring the repository, run:
+npx symapper . --tokens 1500 --focus &lt;word from the task&gt; --focus &lt;another word&gt;
+The map is a starting point: read what it points to, then still search the code (rg/grep).
+It can miss files.</code></pre>
+</section>
+<section aria-labelledby="features">
+<h2 id="features">A focused view</h2>
+<ul class="features">
+<li class="card"><h3>Ranked around your focus</h3><p class="feature-key"><code>--focus path|word</code></p></li>
+<li class="card"><h3>Fits your token budget</h3><p class="feature-key"><code>--tokens N</code></p></li>
+<li class="card"><h3>Local and read-only</h3><p class="feature-key">No LLM. No daemon.</p></li>
+<li class="card"><h3>Six languages</h3><p class="feature-key">TypeScript, JavaScript, Python, Go, Rust, Swift</p></li>
+</ul>
+</section>
+<section class="split" aria-labelledby="focus">
+<h2 id="focus">Point it at your task</h2>
+<p>Paths, identifiers and plain words all work. <a href="docs.html#usage">Flags and focus →</a></p>
+<pre tabindex="0"><code>symapper . --focus src/render.rs --focus render_prefix --tokens 1000</code></pre>
+</section>
+<section aria-labelledby="safety">
+<h2 id="safety">Local by design</h2>
+<p>No network while mapping. It never runs repository code or hooks. <a href="docs.html#cache">Cache and safety →</a></p>
+</section>
+</main>
+<footer><p>symapper 0.1.0 · <a href="https://github.com/viewtools-app/symapper/blob/main/LICENSE">Apache License 2.0</a> · © 2026 ViewTools App</p><p><a href="https://github.com/viewtools-app/symapper">GitHub</a> · <a href="https://www.npmjs.com/package/symapper">npm</a> · <a href="https://github.com/viewtools-app/symapper/blob/main/CHANGELOG.md">Changelog</a> · <a href="https://github.com/viewtools-app/symapper/blob/main/SECURITY.md">Security</a></p><p><a href="docs.html#credits">Credits: Aider's repository map, tree-sitter, PageRank</a></p></footer>
+<script>
+if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+  document.querySelectorAll('[data-copy]').forEach(function (button) {
+    button.hidden = false;
+    button.addEventListener('click', async function () {
+      button.disabled = true;
+      try {
+        await navigator.clipboard.writeText(document.getElementById(button.dataset.copy).textContent);
+        button.textContent = 'Copied';
+        document.getElementById('copy-status').textContent = 'Command copied.';
+      } catch (_) {
+        button.textContent = 'Retry';
+        document.getElementById('copy-status').textContent = 'Copy unavailable. Select and copy the command manually.';
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+}
+
+(function () {
+  var video = document.getElementById('demo');
+  if (!video) return;
+  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    video.poster = 'media/poster-dark.png';
+    video.querySelectorAll('source').forEach(function (source) {
+      source.src = source.src.replace('media/demo.', 'media/demo-dark.');
+    });
+    video.load();
+  }
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  video.preload = 'auto';
+  var started = video.play();
+  if (started && started.catch) started.catch(function () {});
+}());
+</script>
+</body>
+</html>
