@@ -11,6 +11,7 @@ fn options(fixture: &Fixture) -> Options {
         exclude: vec![],
         no_cache: true,
         cache_dir: None,
+        ranking_v010: false,
     }
 }
 

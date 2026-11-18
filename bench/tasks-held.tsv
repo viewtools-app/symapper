@@ -1,0 +1,31 @@
+id	repo	commit	focus	truth	new	k_base	set
+fastapi-6a9928e	fastapi	6a9928edcd3c	Fix AI coding agent notice links in previews				public
+fastapi-f90d036	fastapi	f90d0369380a	Fix OpenAPI schemas for standalone nullable form unions				public
+fastapi-1282e9a	fastapi	1282e9a9f1ac	Fix validation error locations for form and file AliasChoices				public
+flask-05e9c6b	flask	05e9c6bd630e	Fix partition usage on potential IPv6 addresses				public
+flask-7b00886	flask	7b0088693ece	fix typing				public
+flask-12e95c9	flask	12e95c93b488	fix provide_automatic_options override				public
+gin-3b08cd7	gin	3b08cd7235bd	reset skipped nodes stack on getValue entry to prevent slice overflow panic				public
+gin-d8f2d58	gin	d8f2d588d757	add default ReadHeaderTimeout to http Server in Run methods				public
+gin-5c6a15f	gin	5c6a15f8f956	handle missing HTML renderer				public
+cobra-4ba5566	cobra	4ba5566f5704	nounset unbound file filter variable on empty extension				public
+cobra-5bef9d8	cobra	5bef9d8d87ad	Fix version help and output for plugins				public
+cobra-756ba6d	cobra	756ba6dad614	Complete map flags multiple times				public
+ripgrep-f55548b	ripgrep	f55548ba9f24	fix matches_all false positives				public
+ripgrep-3a57099	ripgrep	3a570990c4cf	fix typo				public
+ripgrep-43e2f08	ripgrep	43e2f08edef8	fix parent gitignore matching across multiple roots				public
+axum-715e9a8	axum	715e9a8950b9	preserve protobuf body buffering rejections				public
+axum-c9a911b	axum	c9a911b7999d	axum core fix nested error downcast				public
+axum-a35916c	axum	a35916c63f75	fix CookieJar request header guidance				public
+zod-fef16cb	zod	fef16cba0cf6	omit internal format names for includes startsWith endsWith in toJSONSchema				public
+zod-4fb18a3	zod	4fb18a3eef81	remove literal undefined from lt and hy messages				public
+zod-b539e16	zod	b539e16671e0	emit valid JSON Schema for empty tuples				public
+express-18e5985	express	18e5985b8a9d	add Content Length header only if Transfer Encoding is not present				public
+express-9d8223d	express	9d8223d92ee8	replace deprecated trimRight with trimEnd				public
+express-d127723	express	d12772393c82	search example to support Redis v4 and Express 4 5				public
+alamofire-ba3dc43	alamofire	ba3dc4354d21	fix some typos				public
+alamofire-c22c45e	alamofire	c22c45e6af51	Fix testThatDatesCanBeEncodedAsFormatted test fails due to current calendar mismatches with expected result				public
+alamofire-c265d87	alamofire	c265d87660c1	Fix typos in the quick help of files				public
+hono-2198388	hono	2198388011e5	fix JSDoc parameter types and missing annotations in middleware and helpers				public
+hono-265f36b	hono	265f36be6293	continue the chain when a Condition returns true in every				public
+hono-6dc11ed	hono	6dc11ed09e25	restore attributes and effects when Suspense children suspend again				public

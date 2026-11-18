@@ -20,6 +20,7 @@ pub struct Options {
     pub tokens: usize,
     pub exclude: Vec<String>,
     pub no_cache: bool,
+    pub ranking_v010: bool,
     pub cache_dir: Option<std::ffi::OsString>,
 }
 
@@ -80,14 +81,43 @@ pub fn map(opts: &Options) -> Result<MapOutput, Error> {
         .collect();
     let read = |path: &str| sources.get(path).and_then(|file| tags::read_text(file));
     let content = read_content(&graph.paths, &focus::ContentTerms::new(&focus), &read);
+    let mut source_cache = BTreeMap::new();
+    let mut reader = |path: &str| content.read_for_render(path, &read);
+    if opts.ranking_v010 {
+        let (text, _) = map_v010(
+            &collected,
+            &graph,
+            &focus,
+            &content.matches,
+            opts.tokens,
+            &mut reader,
+            &mut source_cache,
+        );
+        return Ok(MapOutput { text, note: None });
+    }
+    let floor = if opts.focus.is_empty() {
+        BTreeSet::new()
+    } else {
+        map_v010(
+            &collected,
+            &graph,
+            &focus,
+            &content.matches,
+            opts.tokens,
+            &mut reader,
+            &mut source_cache,
+        )
+        .1
+    };
     let (vector, focus_files, scores) =
         focus::personalization(&graph.paths, &collected.files, &focus, &content.matches);
     let ranks = rank::pagerank(graph.paths.len(), &graph.groups, &vector);
     let ranked = rank::split(&graph, &ranks, &focus_files);
     let ranked = rank::focus_order(ranked, &scores, rank::MATCHED_DEFS_PER_FILE);
-    let mut reader = |path: &str| content.read_for_render(path, &read);
-    let text = render::render(
+    let (text, _) = render::render_with_files(
         &render::Input {
+            floor: &floor,
+            late_roots: !opts.focus.is_empty(),
             root_files: &collected.root_files,
             graph: &graph,
             files: &collected.files,
@@ -98,8 +128,42 @@ pub fn map(opts: &Options) -> Result<MapOutput, Error> {
         },
         opts.tokens,
         &mut reader,
+        &mut source_cache,
     );
     Ok(MapOutput { text, note: None })
+}
+
+/// Run the frozen 0.1.0 ranking pipeline with roots first.
+fn map_v010(
+    collected: &Collected,
+    graph: &graph::Graph,
+    focus: &focus::Focus,
+    content: &[BTreeSet<usize>],
+    tokens: usize,
+    reader: &mut dyn FnMut(&str) -> Option<String>,
+    source_cache: &mut BTreeMap<usize, Option<render::CachedSource>>,
+) -> (String, BTreeSet<usize>) {
+    let (vector, focus_files, scores) =
+        focus::personalization_v010(&graph.paths, &collected.files, focus, content);
+    let ranks = rank::pagerank(graph.paths.len(), &graph.groups, &vector);
+    let ranked = rank::split(graph, &ranks, &focus_files);
+    let ranked = rank::focus_order(ranked, &scores, rank::MATCHED_DEFS_PER_FILE);
+    render::render_with_files(
+        &render::Input {
+            floor: &BTreeSet::new(),
+            late_roots: false,
+            root_files: &collected.root_files,
+            graph,
+            files: &collected.files,
+            ranked: &ranked,
+            file_ranks: &ranks,
+            file_scores: &scores,
+            focus_files: &focus_files,
+        },
+        tokens,
+        reader,
+        source_cache,
+    )
 }
 
 #[derive(Default)]

@@ -1,0 +1,11 @@
+# repo	url	sha	lang
+fastapi	https://github.com/fastapi/fastapi	a1b3be01aadc61c67edc09eed4f6cc1fcc3d3b8f	python
+flask	https://github.com/pallets/flask	49943b5a94413a530761350f04e896f76e8d620e	python
+gin	https://github.com/gin-gonic/gin	0f09c3a9b4626d9fe9979cf4d0521d6ae32ab646	go
+cobra	https://github.com/spf13/cobra	adbc8813901bba65827259daa8e22ff94ec1f30e	go
+ripgrep	https://github.com/BurntSushi/ripgrep	178cc027e283fd965cb72d0a7395b219eada170c	rust
+axum	https://github.com/tokio-rs/axum	36d38c4cf2766cd7313dd53d808f30546ee36b1e	rust
+zod	https://github.com/colinhacks/zod	90bf57b8e96a3729d766fff3185d39b2ab3ba016	typescript
+express	https://github.com/expressjs/express	43fca52d28a422c8be48fd489cbd4f2d6152bab6	javascript
+alamofire	https://github.com/Alamofire/Alamofire	dea4bab91767a971d6e112bc955c6a82295589b7	swift
+hono	https://github.com/honojs/hono	676c8f80fcafc49e6e74c847a8f0d9c44cc7faee	typescript

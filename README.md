@@ -45,16 +45,17 @@ npx symapper . --focus cache                    # pull the ranking toward a word
 npx symapper . --focus cache --tokens 120       # smaller budget
 ```
 
-Sample output for `symapper . --focus cache --tokens 160` on this repository (first lines). Key
-repository files come first, then `path:` blocks with the best-ranked signatures:
+Sample output for `symapper . --focus cache --tokens 160` on this repository (first lines). With
+`--focus`, `path:` blocks with the best-ranked signatures come first, followed by key repository
+files (README, LICENSE, manifests, CI workflows):
 
 ```text
-.github/workflows/ci.yml
-.github/workflows/pages.yml
-.github/workflows/release.yml
-Cargo.toml
-LICENSE
-README.md
+src/render.rs:
+impl CachedSource {
+    fn new(text: String) -> Self {
+...
+    impl Fixture {
+        fn new(paths: &[&str]) -> Self {
 src/cache.rs:
 pub fn cache_path(common_dir: &Path, env_value: Option<&OsStr>) -> Result<PathBuf, String> {
 tests/pipeline.rs:
@@ -63,8 +64,8 @@ src/lib.rs:
 pub fn map(opts: &Options) -> Result<MapOutput, Error> {
 tests/map.rs:
 fn python_go_swift() -> Fixture {
-src/git.rs:
-pub struct RepoPaths {
+tests/common/mod.rs:
+pub fn run_bin_with_ranking(
 ```
 
 ## Installation
@@ -89,7 +90,7 @@ shasum -a 256 -c SHA256SUMS --ignore-missing    # macOS (Linux: sha256sum -c ...
 **From source** (Rust 1.90 or newer, git and a C compiler; not on crates.io):
 
 ```sh
-cargo install --git https://github.com/viewtools-app/symapper --tag v0.1.0 --locked
+cargo install --git https://github.com/viewtools-app/symapper --tag v0.2.0 --locked
 cargo install --path . --locked    # from a clone
 ```
 

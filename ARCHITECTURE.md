@@ -63,7 +63,7 @@ tests/focus.rs          path forms, identifiers, personalization and symlink foc
 tests/graph_rank.rs     group graph equals pairwise reference; linear shared-name storage
 tests/export_public.rs  export allowlist, denylist, destination and git safety
 tests/pipeline.rs       cache options, reuse/rebuild, exclusions, read failures and write safety
-tests/golden/           no-focus output goldens
+tests/golden/           no-focus and published v010 output goldens
 tests/map.rs            multilingual map, budget, focus, determinism and name-only output
 tests/tags_ts.rs        exact TypeScript/TSX tags, scopes and syntax-error recovery
 tests/tags_js.rs        exact JavaScript/JSX tags and syntax-error recovery
@@ -109,6 +109,11 @@ calls the supplied reader.
    descending file rank, then path.
 6. Grammar crates are pinned to versions compatible with the pinned `tree-sitter` crate; bump
    together. Trap: a mismatched grammar ABI fails at runtime, not at compile time.
+7. The 0.1.0 floor and `SYMAPPER_RANKING=v010` share `words`, `term_matches`,
+   `COMMON_SHARE`, `resolve`, `graph.rs` identifier weights, `rank.rs` constants,
+   `MATCHED_DEFS_PER_FILE` and the render format with current ranking. Changing any of
+   these moves both away from published 0.1.0. The v010 goldens catch drift only on
+   their fixtures; changes to shared code require broader published-output checks.
 
 ## Data and state
 One cache file per target repo: `<git common dir>/symapper-cache.bin` by default when
@@ -121,6 +126,9 @@ that run, without falling back to the git directory. The CLI reads the environme
 and passes it through `Options::cache_dir`; library callers supply this option explicitly
 (`None` uses the default location). `cache_path` accepts the value explicitly.
 `--no-cache` disables both reads and writes.
+The test-only `SYMAPPER_RANKING=v010` switch selects the frozen 0.1.0 ranking pipeline;
+unset selects the default, and any other value is a usage error. The CLI passes it through
+`Options::ranking_v010`; it is intentionally absent from help.
 The cache is only read from a regular file up to 256 MiB, with a capped read and an opened-handle
 identity check on Unix. The metadata check and open are not atomic; concurrent replacement with
 a FIFO can still block the open. Atomic save replaces final-path symlinks without following them.
@@ -144,6 +152,14 @@ can reuse stale tags (accepted cache risk). Nothing else is stored.
    save changed cache -> resolve focus -> build file graph -> read mapped content when focus
    has content terms -> compute personalization -> personalized PageRank -> split rank into
    (file, identifier) definitions -> promote matched definitions -> render.
+   The hidden v010 switch instead uses `personalization_v010` (the 0.1.0 scoring and its
+   independent `CONTENT_WEIGHT_V010 = 0.75`), the same rank functions and cap 1, and roots first.
+   With focus, the default pipeline first runs that v010 pipeline at the same token budget,
+   retaining its printed graph file set as the recall floor. Without focus, only the default
+   pipeline runs; the v010 switch runs only v010 and never applies a floor. One source cache in
+   `map`, keyed by graph file index, is passed to every `render_with_files` call, memoizing
+   successful and failed render reads across the legacy, plain and floor passes.
+   Successful entries also keep line start byte offsets, computed once for row lookup.
 2. Focus first matches a mapped file by repo-relative path (including `./`), current-directory
    relative path or absolute path inside the repo, retaining a symlink's own path. A matched
    file also contributes its stem as an identifier. Other values are identifiers, including a
@@ -152,31 +168,44 @@ can reuse stale tags (accepted cache risk). Nothing else is stored.
    and retain digits in their word. Matching requires a contiguous word run. Identifier edge
    multipliers use x10 for a case-insensitive whole-name match, otherwise x3 for a word-run
    match, never both; other multipliers are unchanged. Term words are prepared before matching
-   tags. Each file scores the number of distinct terms matching a directory component, file
-   stem or definition name, retaining exact full-path and file-name matches. Definition names
-   are indexed by path because graph paths are sorted and deduplicated. Explicit files score
-   the number of terms, at least one.
+   tags. Definition names are indexed by path because graph paths are sorted and deduplicated.
+   Explicit files score the number of terms plus one, above every other file.
    Focus terms also match file contents (identifiers, comments and strings). The content
    tokenizer splits on every non-alphanumeric character and uses the same case-boundary and
    lowercase rules. For content matching, terms use the same tokenizer as file text; a match
    is a contiguous word run across punctuation and lines. Route matching still uses `words`.
    Stems of explicit focus files never match content. A term matching content in more than
    half the mapped files (`COMMON_SHARE = 0.5`) gets no content weight; route matches still
-   count. Each distinct term contributes once per file: 1.0 for a route match, otherwise
-   0.75 for a content-only match (`CONTENT_WEIGHT`). Personalization is score / total score,
-   uniform if all zero.
+   count. Per term, use the best kind: strong names get IDF, directories `PATH_WEIGHT=0.75` x IDF;
+   IDF = ln((N+1)/(route_df+1))/ln(N+1), or 1 for N <= 1. Body-only gets `CONTENT_WEIGHT=0.5`
+   x min(content IDF, route IDF) when route_df > 0, else x `CONTENT_FLAT=0.25`.
+   Sum per-term scores; personalization is score / total score, uniform if all zero.
    A directory term such as push selects all files under push/. Explicit focus files are
    omitted from output; identifier matches are still printed. Before budget fitting, a
    matched-first definition prefix takes at most one definition per matched file
    (`MATCHED_DEFS_PER_FILE = 1`), ordered by descending focus score with existing rank order
    breaking ties. The remaining definitions keep their rank order. Without focus, no content
    is read and output is unchanged.
-3. Render sorted root file names first, then `path:` definition blocks with enclosing scope
-   headers, `...` gaps and source lines cut at 100 characters. Bisect ranked definitions to fit
+3. Render sorted root names, then `path:` blocks with scope headers, `...` gaps and source lines
+   cut at 100 characters. With focus, non-source roots follow blocks; mapped roots appear only
+   at their block or name-only position. Bisect ranked definitions, reserving printed roots, to fit
    the budget (Unicode characters / 4, aiming for 85-100% when enough content). Append remaining
    file names by descending focus score, then descending file rank, then path, skipping focus
    files and already printed paths, stopping at the first name that exceeds the budget. Trim
-   root names from the end if needed.
+   root names from the end if needed. An empty `Input.floor` preserves this output byte for
+   byte. With a floor, step 1 renders that plain output using the shared source cache and returns
+   it unchanged if it already contains every required file (excluding explicit focus files).
+   Otherwise step 2 reserves one bare path line for each floor file absent from the selected
+   block prefix and printed roots. Trim sorted roots from the end until roots plus the full
+   reserve fit, then bisect block prefixes against candidate characters plus reserve characters,
+   dividing by four only once and retaining the 85% early break. This cuts signature blocks
+   before losing floor files. In the name-only list, floor paths always print at their normal
+   score/rank/path position, without a colon. Other paths must fit together with all floor lines
+   still waiting; skip a non-fitting path while a floor line waits, otherwise stop as usual.
+   The floor's bare paths fit because v010 printed them within the same budget; there is no
+   fallback that drops floor files. `render_with_files` also returns the printed graph file
+   indices, including blocks, name-only paths and mapped roots. `render` wraps it with an empty
+   cache and returns only the text.
 4. No successfully parsed supported files: empty stdout, `symapper: no supported source files`
    on stderr, exit 0. Successful maps also exit 0; runtime/I/O errors exit 1; bad arguments,
    invalid globs or a repo that is not a git work tree exit 2.
@@ -235,7 +264,12 @@ and packs the launcher and host package, installs local tarballs offline, checks
 fixture map, and compares an error with the native binary. Set `SMOKE_CARGO_OFFLINE=1` to make
 its Cargo build offline too. The CI npm job runs both checks on macOS and Linux.
 `tests/map.rs::no_focus_output_matches_golden` guards unchanged no-focus output against
-`tests/golden/`. `scripts/bench-recall.sh` is the manual relevance benchmark against a grep
+`tests/golden/`. `tests/map.rs::v010_output_matches_published_goldens` guards the v010
+pipeline against published 0.1.0 fixture output. Its
+`default_map_restores_a_legacy_path_missing_without_floor` test uses a temporary repo and
+fixed budget where the empty-floor pipeline drops a legacy path, checking that default `map`
+restores that path and keeps every legacy path within budget.
+`scripts/bench-recall.sh` is the manual relevance benchmark against a grep
 baseline; task lists stay private. Timing and relevance on real repositories remain manual checks.
 
 ## Where to make a change
@@ -244,7 +278,7 @@ baseline; task lists stay private. Timing and relevance on real repositories rem
 | Add a prebuilt platform | `npm/symapper/bin/symapper.js` (`packageFor`); `npm/symapper/package.json` (optional dependencies); `scripts/npm-stage.sh`; `scripts/npm-publish.sh`; `scripts/release-archive.sh`; `scripts/npm-smoke.sh`; `.github/workflows/release.yml` (matrix); `npm/symapper/test/launcher.test.js`, `stage.test.js` and `publish.test.js`; platform lists in `ARCHITECTURE.md` and `CONTRIBUTING.md` |
 | A new language | Grammar crate pin; new query `.scm`; `Lang` variant, `ALL`, `from_path`, `language()`, `query_source()` and `scope_kinds()` in `lang.rs`; `query()` storage follows `ALL`; bump `tags::TAGS_VERSION`; add `tests/tags_<lang>.rs` and cover it in `all_grammars_load` |
 | Tag extraction, extension map, scopes or grammar pins | `tags.rs` / `lang.rs`; bump `tags::TAGS_VERSION` |
-| Ranking weights | `graph.rs::ident_mul`, `rank.rs` constants, `focus.rs::CONTENT_WEIGHT`, `focus.rs::COMMON_SHARE`, `rank.rs::MATCHED_DEFS_PER_FILE`; retune only with `scripts/bench-recall.sh` on a tuning set |
+| Ranking weights | `graph.rs::ident_mul`, `rank.rs` constants, `focus.rs::CONTENT_WEIGHT`, `focus.rs::COMMON_SHARE`, `focus.rs::PATH_WEIGHT`, `focus.rs::CONTENT_FLAT`, `rank.rs::MATCHED_DEFS_PER_FILE`; bound test: `focus::tests::match_strength_weights_obey_kind_bounds`; retune only with `scripts/bench-recall.sh` on a tuning set. Shared knobs (`words`, `term_matches`, `COMMON_SHARE`, `resolve`, identifier weights, rank constants, `MATCHED_DEFS_PER_FILE` and the render format) also move the 0.1.0 floor and `SYMAPPER_RANKING=v010` away from published 0.1.0; v010 goldens cover only their fixtures |
 | Output format | `render.rs` |
 
 ## Decisions and known debt

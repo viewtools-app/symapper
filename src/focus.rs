@@ -5,7 +5,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::tags::{FileTags, TagKind};
 use std::path::{Component, Path, PathBuf};
 
-pub const CONTENT_WEIGHT: f64 = 0.75;
+pub const CONTENT_WEIGHT: f64 = 0.5;
+pub const PATH_WEIGHT: f64 = 0.75;
+pub const CONTENT_FLAT: f64 = 0.25;
 pub const COMMON_SHARE: f64 = 0.5;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -205,9 +207,151 @@ pub fn term_matches(term: &[String], name: &[String]) -> bool {
     !term.is_empty() && name.windows(term.len()).any(|run| run == term)
 }
 
-/// Share mass in proportion to distinct matching focus terms, or uniformly if all zero.
+/// Share mass by match strength and route rarity, or uniformly if all zero.
 /// Also return explicit file indices for suppression and unnormalized file scores.
 pub fn personalization(
+    paths: &[String],
+    tags: &[FileTags],
+    focus: &Focus,
+    content: &[BTreeSet<usize>],
+) -> (Vec<f64>, BTreeSet<usize>, Vec<f64>) {
+    let terms: Vec<_> = focus
+        .idents
+        .iter()
+        .map(|term| (term, words(term)))
+        .collect();
+    let mut definitions: BTreeMap<&str, Vec<Vec<String>>> = BTreeMap::new();
+    for file in tags {
+        for tag in &file.tags {
+            if tag.kind == TagKind::Def {
+                definitions
+                    .entry(&file.path)
+                    .or_default()
+                    .push(words(&tag.name));
+            }
+        }
+    }
+    let mut content_counts = vec![0; terms.len()];
+    for matches in content.iter().take(paths.len()) {
+        for &index in matches {
+            if let Some(count) = content_counts.get_mut(index) {
+                *count += 1;
+            }
+        }
+    }
+    // Keep route kinds in path order and count each matching file only once per term.
+    let mut route_counts = vec![0; terms.len()];
+    let routes: Vec<Vec<f64>> = paths
+        .iter()
+        .map(|path| {
+            let path_ref = Path::new(path);
+            let filename = path_ref.file_name().and_then(|s| s.to_str());
+            let directories: Vec<_> = path_ref
+                .parent()
+                .into_iter()
+                .flat_map(Path::components)
+                .filter_map(|component| component.as_os_str().to_str().map(words))
+                .collect();
+            let mut strong_names = Vec::new();
+            if let Some(stem) = path_ref.file_stem().and_then(|s| s.to_str()) {
+                strong_names.push(words(stem));
+            }
+            if let Some(defs) = definitions.get(path.as_str()) {
+                strong_names.extend(defs.iter().cloned());
+            }
+            terms
+                .iter()
+                .enumerate()
+                .map(|(term_index, (term, term_words))| {
+                    let strength = if term_words.is_empty() {
+                        0.0
+                    } else if path == *term
+                        || filename == Some(term.as_str())
+                        || strong_names
+                            .iter()
+                            .any(|name| term_matches(term_words, name))
+                    {
+                        1.0
+                    } else if directories
+                        .iter()
+                        .any(|name| term_matches(term_words, name))
+                    {
+                        PATH_WEIGHT
+                    } else {
+                        0.0
+                    };
+                    if strength > 0.0 {
+                        route_counts[term_index] += 1;
+                    }
+                    strength
+                })
+                .collect()
+        })
+        .collect();
+    let idf = |df: usize| {
+        if paths.len() <= 1 {
+            1.0
+        } else {
+            ((paths.len() + 1) as f64 / (df + 1) as f64).ln() / ((paths.len() + 1) as f64).ln()
+        }
+    };
+    let route_weights: Vec<_> = route_counts.iter().map(|&df| idf(df)).collect();
+    let content_weights: Vec<_> = content_counts
+        .iter()
+        .enumerate()
+        .map(|(index, &df)| {
+            let cap = if route_counts[index] > 0 {
+                idf(df).min(route_weights[index])
+            } else {
+                CONTENT_FLAT
+            };
+            CONTENT_WEIGHT * cap
+        })
+        .collect();
+    let mut files = BTreeSet::new();
+    let mut scores = Vec::with_capacity(paths.len());
+    for (index, path) in paths.iter().enumerate() {
+        if focus.files.contains(path) {
+            files.insert(index);
+            scores.push(terms.len() as f64 + 1.0);
+            continue;
+        }
+        let score = terms
+            .iter()
+            .enumerate()
+            .map(|(term_index, (term, _))| {
+                let strength = routes[index][term_index];
+                if strength > 0.0 {
+                    strength * route_weights[term_index]
+                } else if !focus.stem_idents.contains(*term)
+                    && content
+                        .get(index)
+                        .is_some_and(|matches| matches.contains(&term_index))
+                    && content_counts[term_index] as f64 <= COMMON_SHARE * paths.len() as f64
+                {
+                    content_weights[term_index]
+                } else {
+                    0.0
+                }
+            })
+            .sum();
+        scores.push(score);
+    }
+    let total: f64 = scores.iter().sum();
+    let vector = if total == 0.0 {
+        crate::rank::uniform(paths.len())
+    } else {
+        scores.iter().map(|score| score / total).collect()
+    };
+    (vector, files, scores)
+}
+
+/// Legacy 0.1.0 content weight, independent of current ranking.
+pub const CONTENT_WEIGHT_V010: f64 = 0.75;
+
+/// Share mass in proportion to distinct matching focus terms, or uniformly if all zero.
+/// Also return explicit file indices for suppression and unnormalized file scores.
+pub fn personalization_v010(
     paths: &[String],
     tags: &[FileTags],
     focus: &Focus,
@@ -275,7 +419,7 @@ pub fn personalization(
                         .is_some_and(|matches| matches.contains(&term_index))
                     && content_counts[term_index] as f64 <= COMMON_SHARE * paths.len() as f64
                 {
-                    CONTENT_WEIGHT
+                    CONTENT_WEIGHT_V010
                 } else {
                     0.0
                 }
@@ -290,4 +434,25 @@ pub fn personalization(
         scores.iter().map(|score| score / total).collect()
     };
     (vector, files, scores)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{CONTENT_FLAT, CONTENT_WEIGHT, PATH_WEIGHT};
+
+    #[test]
+    fn match_strength_weights_obey_kind_bounds() {
+        for (lower, upper) in [
+            (0.0, CONTENT_WEIGHT * CONTENT_FLAT),
+            (CONTENT_WEIGHT, PATH_WEIGHT),
+        ] {
+            assert!(lower < upper);
+        }
+        for (lower, upper) in [
+            (CONTENT_WEIGHT * CONTENT_FLAT, CONTENT_WEIGHT),
+            (PATH_WEIGHT, 1.0),
+        ] {
+            assert!(lower <= upper);
+        }
+    }
 }

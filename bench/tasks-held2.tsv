@@ -1,0 +1,31 @@
+id	repo	commit	focus	truth	new	k_base	set
+fastapi-89317c7	fastapi	89317c7003d0	Fix AliasChoices for path parameters				public
+fastapi-2d1851f	fastapi	2d1851f35da7	Fix AliasChoices for named JSON body parameters				public
+fastapi-75f3a14	fastapi	75f3a149359b	Fix AliasChoices extraction for form models				public
+flask-dffe303	flask	dffe3034825e	fix mypy findings				public
+flask-ccf125b	flask	ccf125bf3010	fix mypy findings				public
+flask-9532cba	flask	9532cba45d23	fix mypy finding				public
+gin-dcaa429	gin	dcaa4296d111	fix malformed comment in cleanPath				public
+gin-34dac20	gin	34dac209ffb6	fix BindXML comment referencing nonexistent binding BindXML				public
+gin-d9307db	gin	d9307dbcbbe7	skip chmod on pre existing dirs in SaveUploadedFile				public
+cobra-371ae25	cobra	371ae25d2c82	Fix deprecation comment for Command SetOutput				public
+cobra-a73b9c3	cobra	a73b9c391a94	Fix help text for runnable plugin command				public
+cobra-df547f5	cobra	df547f5fc6ee	Fix help text for plugins				public
+ripgrep-cd1f981	ripgrep	cd1f981beafa	derive Default when possible				public
+ripgrep-d47663b	ripgrep	d47663b1b454	fix regression with line buffered flag				public
+ripgrep-63209ae	ripgrep	63209ae0b95d	fix stats for json				public
+axum-3f06ead	axum	3f06eadb1da3	reject opaque Attachment filenames				public
+axum-502aa87	axum	502aa875b78b	skip non data frames in BytesMut				public
+axum-b7e3788	axum	b7e37889932e	deduplicate methods in the Allow header after merging MethodRouter s				public
+zod-19c40d2	zod	19c40d207228	copy a path a transform pushes before any receiver prefixes it				public
+zod-6fd0477	zod	6fd0477452e8	re run a z lazy getter that threw instead of answering undefined				public
+zod-2ec830f	zod	2ec830fd27f5	wait on a node a concurrent async visit still holds				public
+express-ae265a9	express	ae265a90c7f6	fix JSDoc for req accepts return value and parameter format				public
+express-6cd404e	express	6cd404eb28ff	enhance req acceptsCharsets method				public
+express-b0ed15b	express	b0ed15b4525c	fix typo				public
+alamofire-5c68811	alamofire	5c68811d8b1e	Fix Privacy Manifests Add To Xcode Targets				public
+alamofire-7b38612	alamofire	7b38612d3142	iOS v11 deprecation for SPM with tools version 5 9				public
+alamofire-4ac6cac	alamofire	4ac6cac37012	Fix typo in the quick help of HTTPHeaders				public
+hono-64a1d5a	hono	64a1d5a9e53b	drop the body when overriding to GET or HEAD				public
+hono-69b898e	hono	69b898ebb717	drop Transfer Encoding and Keep Alive from the headers option				public
+hono-fb48e2b	hono	fb48e2b295dd	pass errors thrown in WebSocket handlers to onError				public

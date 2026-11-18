@@ -1,0 +1,31 @@
+id	repo	commit	focus	truth	new	k_base	set
+fastapi-a1a05b7	fastapi	a1a05b75d3e6	Fix OpenAPI for response model with nested computed field				public
+fastapi-5f4f9c1	fastapi	5f4f9c197654	Fix async yield dependency cleanup on cancellation				public
+fastapi-eb2f492	fastapi	eb2f4926de7c	Fix synchronous dependency cleanup on cancellation				public
+flask-d086db8	flask	d086db856be1	fix typing				public
+flask-329c32b	flask	329c32b91693	fix dev				public
+flask-d73fa1c	flask	d73fa1cdcbd8	fix docs ref				public
+gin-ea9fab9	gin	ea9fab99e01d	grow skippedNodes when pooled capacity is stale				public
+gin-43fe48e	gin	43fe48e8a0f4	fix SecureJSON default prefix and default binding example output				public
+gin-1bd0ecf	gin	1bd0ecf2d3e0	load Keys under the mutex in Copy				public
+cobra-746ef07	cobra	746ef0715872	prevent completions from mutating os Args via append side effect				public
+cobra-61968e8	cobra	61968e893eee	quote args in fish shell completion				public
+cobra-a97f9fd	cobra	a97f9fd47b29	fix CompletionFunc implementation				public
+ripgrep-0d7054d	ripgrep	0d7054d8e466	fix deadlock when visitor panics				public
+ripgrep-8bca2eb	ripgrep	8bca2ebfed84	fix typo in man page				public
+ripgrep-61a9fd8	ripgrep	61a9fd82294c	fix typo				public
+axum-ff65346	axum	ff653461168d	axum macros fix debug_handler treating Parts as a body extractor				public
+axum-a000c30	axum	a000c300848c	axum core fix body stream size hints				public
+axum-b14732f	axum	b14732f08cb5	handle missing optional typed headers				public
+zod-c5ce5f6	zod	c5ce5f60c131	hand an intersection s rejection back to the runtime in compiled code				public
+zod-00f532f	zod	00f532f1c59f	resolve the whole JSON Pointer in a fromJSONSchema ref				public
+zod-1e09924	zod	1e099241d9fa	list null in nullable enums in openapi 3 0 output				public
+express-8c2fcfc	express	8c2fcfcb7d37	fix typos and a stale API reference in lib comments				public
+express-9efc29e	express	9efc29e28001	fix pass through typos				public
+express-9a34acf	express	9a34acf03cb8	preserve ETag generation with Transfer Encoding				public
+alamofire-e284308	alamofire	e284308a244d	Fix AFError isSessionTaskError documentation				public
+alamofire-93a3bb5	alamofire	93a3bb5dcc59	Fix Validator Sendability				public
+alamofire-1e8392b	alamofire	1e8392b4c29c	Fix Package swift Deprecation Warning				public
+hono-ab74a8d	hono	ab74a8dd94e3	stop JSONParsed at a recursive JSON type				public
+hono-399e7c9	hono	399e7c92071b	omit body in a 204 result				public
+hono-dea44c8	hono	dea44c8880b9	keep a falsy Suspense fallback				public

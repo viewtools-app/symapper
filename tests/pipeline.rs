@@ -26,6 +26,7 @@ fn options(repo: &Fixture) -> Options {
         exclude: vec![],
         no_cache: false,
         cache_dir: None,
+        ranking_v010: false,
     }
 }
 

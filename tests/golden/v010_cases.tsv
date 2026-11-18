@@ -1,0 +1,4 @@
+v010_plain_focus_300	no_focus	--tokens 300 --no-cache --focus plain
+v010_plain_focus_1024	no_focus	--tokens 1024 --no-cache --focus plain
+v010_python_go_swift_300	python_go_swift	--tokens 300 --no-cache --focus greet --focus View
+v010_python_go_swift_1024	python_go_swift	--tokens 1024 --no-cache --focus greet --focus View

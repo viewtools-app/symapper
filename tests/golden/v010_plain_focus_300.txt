@@ -1,0 +1,35 @@
+README.md
+plain.rs:
+fn plain() {}
+calls.rs:
+fn caller() { plain(); other(); _private(); shared(); }
+fn item000() { plain(); other(); _private(); shared(); }
+fn item001() { plain(); other(); _private(); shared(); }
+fn item002() { plain(); other(); _private(); shared(); }
+fn item003() { plain(); other(); _private(); shared(); }
+fn item004() { plain(); other(); _private(); shared(); }
+fn item005() { plain(); other(); _private(); shared(); }
+fn item006() { plain(); other(); _private(); shared(); }
+fn item007() { plain(); other(); _private(); shared(); }
+fn item008() { plain(); other(); _private(); shared(); }
+fn item009() { plain(); other(); _private(); shared(); }
+fn item010() { plain(); other(); _private(); shared(); }
+fn item011() { plain(); other(); _private(); shared(); }
+fn item012() { plain(); other(); _private(); shared(); }
+fn item013() { plain(); other(); _private(); shared(); }
+other.py:
+def other():
+private.ts:
+function _private() {}
+shared0.go:
+func shared() {}
+shared1.go:
+func shared() {}
+shared2.go:
+func shared() {}
+shared3.go:
+func shared() {}
+shared4.go:
+func shared() {}
+shared5.go:
+func shared() {}

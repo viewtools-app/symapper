@@ -63,7 +63,21 @@ pub fn run_bin_with_env(
     cwd: &Path,
     cache_dir: &std::ffi::OsStr,
 ) -> (i32, String, String) {
-    let output = Command::new(env!("CARGO_BIN_EXE_symapper"))
+    run_bin_with_ranking(args, cwd, cache_dir, None)
+}
+
+pub fn run_bin_with_ranking(
+    args: &[&str],
+    cwd: &Path,
+    cache_dir: &std::ffi::OsStr,
+    ranking: Option<&str>,
+) -> (i32, String, String) {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_symapper"));
+    command.env_remove("SYMAPPER_RANKING");
+    if let Some(ranking) = ranking {
+        command.env("SYMAPPER_RANKING", ranking);
+    }
+    let output = command
         .env("SYMAPPER_CACHE_DIR", cache_dir)
         .args(args)
         .current_dir(cwd)

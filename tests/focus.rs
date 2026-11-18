@@ -99,7 +99,9 @@ fn explicit_files_and_ident_matches_share_mass_without_duplicates() {
         idents: BTreeSet::from(["main".into()]),
     };
     let (vector, indices, _) = personalization(&paths(), &[], &focus, &[]);
-    assert_eq!(vector, symapper::rank::uniform(3));
+    let route = match_strength_idf(3, 2);
+    let total = route + 2.0 + 2.0;
+    assert_eq!(vector, [route / total, 2.0 / total, 2.0 / total]);
     assert_eq!(indices, BTreeSet::from([1, 2]));
 }
 
@@ -241,11 +243,17 @@ fn word_runs_score_components_and_definitions_by_distinct_term() {
         files: BTreeSet::from(["z.rs".into()]),
         idents: ["settings", "summary", "push"].map(String::from).into(),
     };
-    let (vector, explicit, _) = personalization(&paths, &files, &focus, &[]);
-    assert_eq!(
-        vector,
-        vec![0.0, 2.0 / 7.0, 1.0 / 7.0, 1.0 / 7.0, 3.0 / 7.0]
-    );
+    let (vector, explicit, scores) = personalization(&paths, &files, &focus, &[]);
+    let expected_scores = [
+        0.0,
+        2.0 * match_strength_idf(5, 1),
+        symapper::focus::PATH_WEIGHT * match_strength_idf(5, 2),
+        symapper::focus::PATH_WEIGHT * match_strength_idf(5, 2),
+        4.0,
+    ];
+    let total: f64 = expected_scores.iter().sum();
+    assert_eq!(scores, expected_scores);
+    assert_eq!(vector, expected_scores.map(|score| score / total));
     assert_eq!(explicit, BTreeSet::from([4]));
 }
 
@@ -323,13 +331,18 @@ fn content_only_scores_less_than_route_and_common_terms_are_suppressed() {
     let (vector, files, scores) = personalization(&paths, &[], &focus, &content);
     let w = symapper::focus::CONTENT_WEIGHT;
     assert!(w > 0.0 && w < 1.0);
-    assert_eq!(scores, [1.0, w, 0.0, 0.0]);
-    assert_eq!(vector, [1.0 / (1.0 + w), w / (1.0 + w), 0.0, 0.0]);
+    let route = match_strength_idf(4, 1);
+    let body = w * match_strength_idf(4, 2);
+    assert_eq!(scores, [route, body, 0.0, 0.0]);
+    assert_eq!(
+        vector,
+        [route / (route + body), body / (route + body), 0.0, 0.0]
+    );
     assert!(files.is_empty());
     let common = vec![BTreeSet::from([0]); 4];
     assert_eq!(
         personalization(&paths, &[], &focus, &common).2,
-        [1.0, 0.0, 0.0, 0.0]
+        [route, 0.0, 0.0, 0.0]
     );
     let missing = Focus {
         idents: BTreeSet::from(["common".into()]),
@@ -350,6 +363,283 @@ fn explicit_file_stems_are_route_only_unless_also_supplied_as_terms() {
     let content = vec![BTreeSet::from([0]), BTreeSet::new(), BTreeSet::new()];
     assert_eq!(
         personalization(&paths, &[], &focus, &content).2,
+        [0.0, 0.0, 2.0]
+    );
+    for values in [
+        vec!["mod".into(), "src/x/mod.rs".into()],
+        vec!["src/x/mod.rs".into(), "mod".into()],
+    ] {
+        let focus = resolve(&values, repo.path(), repo.path(), &paths);
+        assert!(focus.stem_idents.is_empty());
+        assert_eq!(
+            ContentTerms::new(&focus).matches("mod"),
+            BTreeSet::from([0])
+        );
+    }
+}
+
+fn match_strength_idf(n: usize, df: usize) -> f64 {
+    if n <= 1 {
+        1.0
+    } else {
+        ((n + 1) as f64 / (df + 1) as f64).ln() / ((n + 1) as f64).ln()
+    }
+}
+
+#[test]
+fn match_strength_definitions_and_directories_outrank_body_mentions() {
+    use symapper::tags::{FileTags, Tag, TagKind};
+    let paths = ["a.rs", "motion/b.rs", "c.rs", "d.rs", "e.rs"].map(String::from);
+    let tags = [FileTags {
+        path: paths[0].clone(),
+        mtime_ns: 0,
+        size: 0,
+        tags: vec![Tag {
+            name: "MotionController".into(),
+            kind: TagKind::Def,
+            line: 0,
+            scopes: vec![],
+        }],
+    }];
+    let focus = Focus {
+        idents: BTreeSet::from(["motion".into()]),
+        ..Focus::default()
+    };
+    // The directory file also mentions the term: matching kinds must not add up.
+    let content = [BTreeSet::new(), BTreeSet::from([0]), BTreeSet::from([0])];
+    let (_, _, scores) = personalization(&paths, &tags, &focus, &content);
+    let route = match_strength_idf(5, 2);
+    assert_eq!(scores, [route, 0.75 * route, 0.5 * route, 0.0, 0.0]);
+    assert!(scores[0] > scores[1] && scores[1] > scores[2]);
+
+    // Content frequency does not discount the defining identifier's route weight.
+    let common_content = vec![BTreeSet::from([0]); paths.len()];
+    assert_eq!(
+        personalization(&paths, &tags, &focus, &common_content).2,
+        [route, 0.75 * route, 0.0, 0.0, 0.0]
+    );
+}
+
+#[test]
+fn match_strength_rare_names_outscore_common_names() {
+    let paths = ["rare.rs", "common/a.rs", "b/common.rs", "common.py"].map(String::from);
+    let focus = Focus {
+        idents: BTreeSet::from(["common".into(), "rare".into()]),
+        ..Focus::default()
+    };
+    let (_, _, scores) = personalization(&paths, &[], &focus, &[]);
+    assert_eq!(
+        scores,
+        [
+            match_strength_idf(4, 1),
+            0.75 * match_strength_idf(4, 3),
+            match_strength_idf(4, 3),
+            match_strength_idf(4, 3),
+        ]
+    );
+    assert!(scores[0] > scores[2]);
+}
+
+#[test]
+fn match_strength_comment_only_verbs_have_a_flat_cap() {
+    let paths = ["motion.rs", "a.rs", "b.rs", "c.rs"].map(String::from);
+    let focus = Focus {
+        idents: BTreeSet::from(["fix".into(), "motion".into()]),
+        ..Focus::default()
+    };
+    let terms = ContentTerms::new(&focus);
+    let content =
+        ["fn motion() {}", "// fix\nfn unrelated() {}", "", ""].map(|text| terms.matches(text));
+    let (_, _, scores) = personalization(&paths, &[], &focus, &content);
+    assert_eq!(scores, [match_strength_idf(4, 1), 0.5 * 0.25, 0.0, 0.0]);
+    assert!(scores[0] > scores[1]);
+}
+
+#[test]
+fn match_strength_universal_terms_do_not_change_other_scores_or_order() {
+    use symapper::rank::{DefRank, focus_order};
+    let paths = ["src/motion.rs", "src/motion.py", "src/a.rs"].map(String::from);
+    let mut focus = Focus {
+        idents: BTreeSet::from(["motion".into()]),
+        ..Focus::default()
+    };
+    let before = personalization(&paths, &[], &focus, &[]);
+    // The higher PageRank belongs to the later path, so a path sort would fail.
+    let ranked: Vec<_> = [(1, 0.6), (0, 0.3), (2, 0.1)]
+        .into_iter()
+        .map(|(file, rank)| DefRank {
+            file,
+            ident: 0,
+            rank,
+        })
+        .collect();
+    assert_eq!(focus_order(ranked.clone(), &before.2, 1), ranked);
+    focus.idents.insert("src".into());
+    assert_eq!(personalization(&paths, &[], &focus, &[]), before);
+    let after = personalization(&paths, &[], &focus, &[]);
+    assert_eq!(focus_order(ranked.clone(), &after.2, 1), ranked);
+    focus.idents.remove("motion");
+    assert_eq!(
+        personalization(&paths, &[], &focus, &[]),
+        (symapper::rank::uniform(3), BTreeSet::new(), vec![0.0; 3])
+    );
+}
+
+#[test]
+fn match_strength_explicit_files_exceed_all_term_matches() {
+    let paths = ["chosen.rs", "motion_fix.rs", "a.rs"].map(String::from);
+    let focus = Focus {
+        files: BTreeSet::from([paths[0].clone()]),
+        idents: BTreeSet::from(["fix".into(), "motion".into()]),
+        ..Focus::default()
+    };
+    let (vector, explicit, scores) = personalization(&paths, &[], &focus, &[]);
+    let other = 2.0 * match_strength_idf(3, 1);
+    assert_eq!(scores, [3.0, other, 0.0]);
+    assert_eq!(vector, [3.0 / (3.0 + other), other / (3.0 + other), 0.0]);
+    assert_eq!(explicit, BTreeSet::from([0]));
+    assert!(scores[0] > scores[1]);
+}
+
+#[test]
+fn match_strength_singleton_routes_keep_full_weight() {
+    let paths = ["motion.rs".into()];
+    let focus = Focus {
+        idents: BTreeSet::from(["motion".into()]),
+        ..Focus::default()
+    };
+    assert_eq!(
+        personalization(&paths, &[], &focus, &[]),
+        (vec![1.0], BTreeSet::new(), vec![1.0])
+    );
+}
+
+#[test]
+fn explicit_files_and_ident_matches_share_mass_without_duplicates_v010() {
+    let focus = Focus {
+        stem_idents: BTreeSet::new(),
+        files: BTreeSet::from(["src/app/main.rs".into(), "src/other.rs".into()]),
+        idents: BTreeSet::from(["main".into()]),
+    };
+    let (vector, indices, _) = symapper::focus::personalization_v010(&paths(), &[], &focus, &[]);
+    assert_eq!(vector, symapper::rank::uniform(3));
+    assert_eq!(indices, BTreeSet::from([1, 2]));
+}
+
+#[test]
+fn word_runs_score_components_and_definitions_by_distinct_term_v010() {
+    use symapper::tags::{FileTags, Tag, TagKind};
+    let paths = [
+        "SheetLayout.swift",
+        "a.rs",
+        "push/a.rs",
+        "push/nested/b.rs",
+        "z.rs",
+    ]
+    .map(String::from);
+    // Tag input order deliberately differs from graph path order.
+    let files = vec![
+        FileTags {
+            path: "a.rs".into(),
+            mtime_ns: 0,
+            size: 0,
+            tags: vec![
+                Tag {
+                    name: "SettingsSummary".into(),
+                    kind: TagKind::Def,
+                    line: 0,
+                    scopes: vec![]
+                };
+                2
+            ],
+        },
+        FileTags {
+            path: "z.rs".into(),
+            mtime_ns: 0,
+            size: 0,
+            tags: vec![Tag {
+                name: "SettingsSummary".into(),
+                kind: TagKind::Ref,
+                line: 0,
+                scopes: vec![],
+            }],
+        },
+    ];
+    for (terms, expected) in [
+        (vec!["sheet"], vec![1.0, 0.0, 0.0, 0.0, 0.0]),
+        (vec!["settings", "summary"], vec![0.0, 1.0, 0.0, 0.0, 0.0]),
+        (vec!["push"], vec![0.0, 0.0, 0.5, 0.5, 0.0]),
+        (vec!["settings summary"], vec![0.0, 1.0, 0.0, 0.0, 0.0]),
+        (vec!["summary settings"], symapper::rank::uniform(5)),
+        (vec!["_-/"], symapper::rank::uniform(5)),
+    ] {
+        let focus = Focus {
+            stem_idents: BTreeSet::new(),
+            files: BTreeSet::new(),
+            idents: terms.into_iter().map(String::from).collect(),
+        };
+        assert_eq!(
+            symapper::focus::personalization_v010(&paths, &files, &focus, &[]).0,
+            expected
+        );
+    }
+    let focus = Focus {
+        stem_idents: BTreeSet::new(),
+        files: BTreeSet::from(["z.rs".into()]),
+        idents: ["settings", "summary", "push"].map(String::from).into(),
+    };
+    let (vector, explicit, _) = symapper::focus::personalization_v010(&paths, &files, &focus, &[]);
+    assert_eq!(
+        vector,
+        vec![0.0, 2.0 / 7.0, 1.0 / 7.0, 1.0 / 7.0, 3.0 / 7.0]
+    );
+    assert_eq!(explicit, BTreeSet::from([4]));
+}
+
+#[test]
+fn content_only_scores_less_than_route_and_common_terms_are_suppressed_v010() {
+    let paths = ["motion.rs", "a.rs", "b.rs", "c.rs"].map(String::from);
+    let focus = Focus {
+        idents: BTreeSet::from(["motion".into()]),
+        ..Focus::default()
+    };
+    let content = vec![
+        BTreeSet::from([0]),
+        BTreeSet::from([0]),
+        BTreeSet::new(),
+        BTreeSet::new(),
+    ];
+    let (vector, files, scores) =
+        symapper::focus::personalization_v010(&paths, &[], &focus, &content);
+    let w = symapper::focus::CONTENT_WEIGHT_V010;
+    assert!(w > 0.0 && w < 1.0);
+    assert_eq!(scores, [1.0, w, 0.0, 0.0]);
+    assert_eq!(vector, [1.0 / (1.0 + w), w / (1.0 + w), 0.0, 0.0]);
+    assert!(files.is_empty());
+    let common = vec![BTreeSet::from([0]); 4];
+    assert_eq!(
+        symapper::focus::personalization_v010(&paths, &[], &focus, &common).2,
+        [1.0, 0.0, 0.0, 0.0]
+    );
+    let missing = Focus {
+        idents: BTreeSet::from(["common".into()]),
+        ..Focus::default()
+    };
+    let result = symapper::focus::personalization_v010(&paths, &[], &missing, &common);
+    assert_eq!(result.0, symapper::rank::uniform(4));
+    assert_eq!(result.2, [0.0; 4]);
+}
+
+#[test]
+fn explicit_file_stems_are_route_only_unless_also_supplied_as_terms_v010() {
+    let repo = Fixture::new();
+    let paths = ["a.rs", "b.rs", "src/x/mod.rs"].map(String::from);
+    let focus = resolve(&["src/x/mod.rs".into()], repo.path(), repo.path(), &paths);
+    assert_eq!(focus.stem_idents, BTreeSet::from(["mod".into()]));
+    assert!(ContentTerms::new(&focus).is_empty());
+    let content = vec![BTreeSet::from([0]), BTreeSet::new(), BTreeSet::new()];
+    assert_eq!(
+        symapper::focus::personalization_v010(&paths, &[], &focus, &content).2,
         [0.0, 0.0, 1.0]
     );
     for values in [

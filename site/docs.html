@@ -36,7 +36,7 @@ shasum -a 256 -c SHA256SUMS --ignore-missing     # macOS</code></pre>
 <p>If macOS blocks the binary, run <code>xattr -d com.apple.quarantine symapper</code>.</p>
 <h3>From source</h3>
 <p>Needs Rust 1.90 or newer, git and a C compiler. Not on crates.io.</p>
-<pre tabindex="0"><code>cargo install --git https://github.com/viewtools-app/symapper --tag v0.1.0 --locked
+<pre tabindex="0"><code>cargo install --git https://github.com/viewtools-app/symapper --tag v0.2.0 --locked
 cargo install --path . --locked    # from a clone</code></pre></section>
 <section aria-labelledby="usage"><h2 id="usage">Flags and focus</h2>
 <pre tabindex="0"><code>symapper &lt;repo&gt; [--focus &lt;path|ident&gt;] [--tokens N] [--exclude &lt;glob&gt;] [--no-cache]
@@ -54,7 +54,7 @@ symapper ./example-repo --exclude 'tests/**' --exclude 'vendor/**' --no-cache</c
 <p>A focus path may be repository-relative (including <code>./</code>), relative to the current directory, or absolute inside the repository. Only mapped source files match, and a tracked symlink matches by its own path. A matched file also adds its stem as a focus identifier. Other values are identifiers. Explicit focus files are omitted from the map; identifier-matched files can still appear.</p>
 <h3>Output layout</h3>
 <ul>
-<li>Sorted names of important root files (README, LICENSE, manifests, build and compose files, direct <code>.github/workflows/*.yml</code> and <code>.forgejo/workflows/*.yml</code>).</li>
+<li>Sorted names of important root files (README, LICENSE, manifests, build and compose files, direct <code>.github/workflows/*.yml</code> and <code>.forgejo/workflows/*.yml</code>), after the blocks when <code>--focus</code> is given.</li>
 <li><code>path:</code> blocks with definition and enclosing scope lines, <code>...</code> for gaps, lines cut at 100 characters.</li>
 <li>Remaining source files by name only, by descending focus score, then file rank, then path.</li>
 </ul>
@@ -83,14 +83,16 @@ It can miss files.</code></pre></section>
 <ul>
 <li>Terms and names split on underscores, hyphens, dots, slashes, whitespace and case boundaries (SheetLayout -&gt; sheet, layout; HTTPServer -&gt; http, server), then lowercase. Digits stay in their word.</li>
 <li>A term matches a contiguous run of name words. Symbols receive x10 for a case-insensitive whole-name match, otherwise x3 for a word-run match, never both.</li>
-<li>Each distinct term contributes 1.0 for a match in a directory component, file stem or definition name, including exact full-path and file-name matches. Thus push matches every file under push/.</li>
-<li>Otherwise a term contributes 0.75 for a content-only match, unless it occurs in more than half the mapped files.</li>
+<li>For each distinct term, only the best match kind counts. A definition-name or file-stem match gets the term's inverse document frequency (IDF) among file names; a directory-component match gets 0.75 x that weight. Thus push matches every file under push/. IDF is ln((N + 1) / (matching files + 1)) / ln(N + 1), where N is the number of mapped files, or 1 when N is at most 1.</li>
+<li>A body-only match gets 0.5 x the smaller of content IDF and name IDF. If no file name matches the term, it gets 0.5 x 0.25 instead. Terms found in more than half the files' bodies get no body weight. Per-term weights are summed for each file.</li>
 <li>Content matching covers identifiers, comments and strings of mapped source files, never README, Markdown, YAML or JSON. Content splits on every non-alphanumeric character with the same case rules; matches can cross punctuation and lines. Stems added from explicit focus files never match content.</li>
-<li>Explicit focus files score the number of terms, at least one.</li>
+<li>Explicit focus files score the number of terms plus one.</li>
 </ul>
 <h3>Ordering and budget</h3>
 <ul>
+<li>With <code>--focus</code>, every file the 0.1.0 ranking prints at the same budget stays in the map, as a name line when its signatures do not fit, so focus ordering no longer drops files the 0.1.0 ranking showed.</li>
 <li>Files with a higher focus score come first, each led by its best-scoring definition (at most one promoted per file). Other definitions keep rank order.</li>
+<li>With focus, root files follow the definition blocks; a root that is also a source file appears once at its ranked position.</li>
 <li>The renderer trims signatures to <code>--tokens</code>; leftover room lists other file names.</li>
 </ul>
 <h3>Credits</h3>
@@ -123,7 +125,7 @@ It can miss files.</code></pre></section>
 </div>
 </div>
 </main>
-<footer><p>symapper 0.1.0 · <a href="https://github.com/viewtools-app/symapper/blob/main/LICENSE">Apache License 2.0</a> · © 2026 ViewTools App</p><p><a href="https://github.com/viewtools-app/symapper">GitHub</a> · <a href="https://www.npmjs.com/package/symapper">npm</a> · <a href="https://github.com/viewtools-app/symapper/blob/main/CHANGELOG.md">Changelog</a> · <a href="https://github.com/viewtools-app/symapper/blob/main/SECURITY.md">Security</a></p><p><a href="docs.html#credits">Credits: Aider's repository map, tree-sitter, PageRank</a></p></footer>
+<footer><p>symapper 0.2.0 · <a href="https://github.com/viewtools-app/symapper/blob/main/LICENSE">Apache License 2.0</a> · © 2026 ViewTools App</p><p><a href="https://github.com/viewtools-app/symapper">GitHub</a> · <a href="https://www.npmjs.com/package/symapper">npm</a> · <a href="https://github.com/viewtools-app/symapper/blob/main/CHANGELOG.md">Changelog</a> · <a href="https://github.com/viewtools-app/symapper/blob/main/SECURITY.md">Security</a></p><p><a href="docs.html#credits">Credits: Aider's repository map, tree-sitter, PageRank</a></p></footer>
 <script>
 if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
   document.querySelectorAll('[data-copy]').forEach(function (button) {

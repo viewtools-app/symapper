@@ -34,6 +34,14 @@ pub fn main() -> ExitCode {
             return ExitCode::from(error.exit_code() as u8);
         }
     };
+    let ranking_v010 = match std::env::var_os("SYMAPPER_RANKING") {
+        None => false,
+        Some(value) if value == "v010" => true,
+        Some(_) => {
+            eprintln!("symapper: SYMAPPER_RANKING must be v010 when set");
+            return ExitCode::from(2);
+        }
+    };
     let opts = Options {
         repo: args.repo,
         focus: args.focus,
@@ -41,6 +49,7 @@ pub fn main() -> ExitCode {
         exclude: args.exclude,
         no_cache: args.no_cache,
         cache_dir: std::env::var_os("SYMAPPER_CACHE_DIR"),
+        ranking_v010,
     };
     match crate::map(&opts) {
         Ok(output) => {
